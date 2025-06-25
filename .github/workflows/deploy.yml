@@ -1,4 +1,4 @@
-name: Deploy to EC2 with Docker
+name: Deploy FastAPI App to EC2 via Docker
 
 on:
   push:
@@ -6,25 +6,34 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.8.0
-      with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+      - name: Set up SSH access
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-    - name: Deploy to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@<EC2_PUBLIC_IP> << 'EOF'
-          cd ~/fastapi-app || git clone https://github.com/opula1234/Python_Employee_Management.git ~/fastapi-app
-          cd ~/fastapi-app
-          git pull origin main
-          docker stop fastapi-app || true
-          docker rm fastapi-app || true
-          docker build -t fastapi-app .
-          docker run -d -p 8000:8000 --name fastapi-app fastapi-app
-        EOF
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} '
+            # Clone repo if not already cloned
+            if [ ! -d ~/fastapi-app ]; then
+              git clone https://github.com/opula1234/Python_Employee_Management.git ~/fastapi-app
+            fi
+
+            cd ~/fastapi-app
+            git pull origin main
+
+            # Stop and remove old container if it exists
+            docker stop fastapi-app || true
+            docker rm fastapi-app || true
+
+            # Build and run new Docker container
+            docker build -t fastapi-app .
+            docker run -d -p 8000:8000 --name fastapi-app fastapi-app
+          '
