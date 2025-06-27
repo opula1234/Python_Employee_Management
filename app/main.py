@@ -1,6 +1,7 @@
 """Main module for FastAPI Development application."""
 
 from fastapi import FastAPI
+from logger.log_config import logger as log
 
 app = FastAPI(
     title="FastAPI Development",
@@ -12,10 +13,12 @@ app = FastAPI(
 @app.get("/")
 def welcome_greet():
     """Return a welcome message for the FastAPI application."""
+    log.info("Welcome message")
     return {"message": "Welcome to FastAPI Development..."}
 
 
 @app.get("/info")
 def show_information():
     """Return information about the application."""
+    log.info("showing information")
     return {"message": "This is the information page"}
